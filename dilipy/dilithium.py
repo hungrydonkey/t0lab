@@ -209,7 +209,7 @@ class Dilithium:
         tr = self._h(pk, 32)
 
         sk = self._pack_sk(rho, K, tr, s1, s2, t0)
-        return pk, sk
+        return pk, sk, s1, s2, A_hat.from_ntt(), t1, t0
 
     def sign(self, sk_bytes, m):
         """
@@ -270,7 +270,7 @@ class Dilithium:
             if h.sum_hint() > self.omega:
                 continue
 
-            return self._pack_sig(c_tilde, z, h)
+            return self._pack_sig(c_tilde, z, h), c.from_ntt(), z, y, w, w0, w1
 
     def verify(self, pk_bytes, m, sig_bytes):
         """
@@ -305,4 +305,42 @@ class Dilithium:
         w_prime = h.use_hint(Az_minus_ct1, 2 * self.gamma_2)
         w_prime_bytes = w_prime.bit_pack_w(self.gamma_2)
 
-        return c_tilde == self._h(mu + w_prime_bytes, 32)
+        return c_tilde == self._h(mu + w_prime_bytes, 32), Az_minus_ct1, w_prime
+
+
+DEFAULT_PARAMETERS = {
+    "dilithium2": {
+        "d": 13,
+        "k": 4,
+        "l": 4,
+        "eta": 2,
+        "tau": 39,
+        "omega": 80,
+        "gamma_1": 131072,  # 2^17
+        "gamma_2": 95232,  # (q-1)/88
+    },
+    "dilithium3": {
+        "d": 13,
+        "k": 6,
+        "l": 5,
+        "eta": 4,
+        "tau": 49,
+        "omega": 55,
+        "gamma_1": 524288,  # 2^19
+        "gamma_2": 261888,  # (q-1)/32
+    },
+    "dilithium5": {
+        "d": 13,
+        "k": 8,
+        "l": 7,
+        "eta": 2,
+        "tau": 60,
+        "omega": 75,
+        "gamma_1": 524288,  # 2^19
+        "gamma_2": 261888,  # (q-1)/32
+    },
+}
+
+Dilithium2 = Dilithium(DEFAULT_PARAMETERS["dilithium2"])
+Dilithium3 = Dilithium(DEFAULT_PARAMETERS["dilithium3"])
+Dilithium5 = Dilithium(DEFAULT_PARAMETERS["dilithium5"])
