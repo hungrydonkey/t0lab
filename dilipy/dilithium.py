@@ -209,7 +209,7 @@ class Dilithium:
         tr = self._h(pk, 32)
 
         sk = self._pack_sk(rho, K, tr, s1, s2, t0)
-        return pk, sk, s1, s2, A_hat.from_ntt(), t1, t0
+        return pk, sk, s1, s2, A_hat.from_ntt(), t1, t0, t
 
     def sign(self, sk_bytes, m):
         """
