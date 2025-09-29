@@ -1,10 +1,6 @@
 import os
-from .modules import ModuleDilithium
-
-try:
-    from xoflib import shake256
-except ImportError:
-    from .shake_wrapper import shake256
+from .modules import Module
+from .shake_wrapper import shake256
 
 
 class Dilithium:
@@ -26,29 +22,29 @@ class Dilithium:
         # use the method `set_drbg_seed()`
         self.random_bytes = os.urandom
 
-    def set_drbg_seed(self, seed):
-        """
-        Change entropy source to a DRBG and seed it with provided value.
+    # def set_drbg_seed(self, seed):
+    #     """
+    #     Change entropy source to a DRBG and seed it with provided value.
 
-        Setting the seed switches the entropy source from :func:`os.urandom()`
-        to an AES256 CTR DRBG.
+    #     Setting the seed switches the entropy source from :func:`os.urandom()`
+    #     to an AES256 CTR DRBG.
 
-        Used for both deterministic versions of Kyber as well as testing
-        alignment with the KAT vectors
+    #     Used for both deterministic versions of Kyber as well as testing
+    #     alignment with the KAT vectors
 
-        Note:
-          currently requires pycryptodome for AES impl.
-        """
-        try:
-            from ..drbg.aes256_ctr_drbg import AES256_CTR_DRBG
+    #     Note:
+    #       currently requires pycryptodome for AES impl.
+    #     """
+    #     try:
+    #         from ..drbg.aes256_ctr_drbg import AES256_CTR_DRBG
 
-            self._drbg = AES256_CTR_DRBG(seed)
-            self.random_bytes = self._drbg.random_bytes
-        except ImportError as e:  # pragma: no cover
-            print(f"Error importing AES from pycryptodome: {e = }")
-            raise Warning(
-                "Cannot set DRBG seed due to missing dependencies, try installing requirements: pip -r install requirements"
-            )
+    #         self._drbg = AES256_CTR_DRBG(seed)
+    #         self.random_bytes = self._drbg.random_bytes
+    #     except ImportError as e:  # pragma: no cover
+    #         print(f"Error importing AES from pycryptodome: {e = }")
+    #         raise Warning(
+    #             "Cannot set DRBG seed due to missing dependencies, try installing requirements: pip -r install requirements"
+    #         )
 
     """
     H() uses Shake256 to hash data to 32 and 64 bytes in a
