@@ -19,7 +19,7 @@ class Dilithium:
         self.gamma_2 = parameter_set["gamma_2"]
         self.beta = self.tau * self.eta
 
-        self.M = ModuleDilithium()
+        self.M = Module()
         self.R = self.M.ring
 
         # Use system randomness by default, for deterministic randomness
@@ -51,8 +51,8 @@ class Dilithium:
             )
 
     """
-    H() uses Shake256 to hash data to 32 and 64 bytes in a 
-    few places in the code 
+    H() uses Shake256 to hash data to 32 and 64 bytes in a
+    few places in the code
     """
 
     @staticmethod
@@ -67,7 +67,7 @@ class Dilithium:
         Helper function which generates a element of size
         k x l from a seed `rho`.
         """
-        A_data = [[0 for _ in range(self.l)] for _ in range(self.k)]
+        A_data = [[self.R.zero() for _ in range(self.l)] for _ in range(self.k)]
         for i in range(self.k):
             for j in range(self.l):
                 A_data[i][j] = self.R.rejection_sample_ntt_poly(rho, i, j)
@@ -124,7 +124,7 @@ class Dilithium:
 
     def _unpack_pk(self, pk_bytes):
         rho, t1_bytes = pk_bytes[:32], pk_bytes[32:]
-        t1 = self.M.bit_unpack_t1(t1_bytes, self.k, 1)
+        t1 = self.M.bit_unpack_t1(t1_bytes, self.k)
         return rho, t1
 
     def _unpack_sk(self, sk_bytes):
@@ -154,9 +154,9 @@ class Dilithium:
         t0_bytes = sk_vec_bytes[-t0_len:]
 
         # Unpack bytes to vectors
-        s1 = self.M.bit_unpack_s(s1_bytes, self.l, 1, self.eta)
-        s2 = self.M.bit_unpack_s(s2_bytes, self.k, 1, self.eta)
-        t0 = self.M.bit_unpack_t0(t0_bytes, self.k, 1)
+        s1 = self.M.bit_unpack_s(s1_bytes, self.l, self.eta)
+        s2 = self.M.bit_unpack_s(s2_bytes, self.k, self.eta)
+        t0 = self.M.bit_unpack_t0(t0_bytes, self.k)
 
         return rho, K, tr, s1, s2, t0
 
@@ -179,7 +179,7 @@ class Dilithium:
         z_bytes = sig_bytes[32 : -(self.k + self.omega)]
         h_bytes = sig_bytes[-(self.k + self.omega) :]
 
-        z = self.M.bit_unpack_z(z_bytes, self.l, 1, self.gamma_1)
+        z = self.M.bit_unpack_z(z_bytes, self.l, self.gamma_1)
         h = self._unpack_h(h_bytes)
         return c_tilde, z, h
 
@@ -213,7 +213,7 @@ class Dilithium:
         tr = self._h(pk, 32)
 
         sk = self._pack_sk(rho, K, tr, s1, s2, t0)
-        return pk, sk, s1, s2, A_hat.from_ntt(), t1, t0
+        return pk, sk
 
     def sign(self, sk_bytes, m):
         """
@@ -274,7 +274,7 @@ class Dilithium:
             if h.sum_hint() > self.omega:
                 continue
 
-            return self._pack_sig(c_tilde, z, h), c.from_ntt(), z, y, w, w0, w1
+            return self._pack_sig(c_tilde, z, h)
 
     def verify(self, pk_bytes, m, sig_bytes):
         """
@@ -309,43 +309,4 @@ class Dilithium:
         w_prime = h.use_hint(Az_minus_ct1, 2 * self.gamma_2)
         w_prime_bytes = w_prime.bit_pack_w(self.gamma_2)
 
-        # return c_tilde == self._h(mu + w_prime_bytes, 32),
-        return Az_minus_ct1, w_prime
-
-
-DEFAULT_PARAMETERS = {
-    "dilithium2": {
-        "d": 13,
-        "k": 4,
-        "l": 4,
-        "eta": 2,
-        "tau": 39,
-        "omega": 80,
-        "gamma_1": 131072,  # 2^17
-        "gamma_2": 95232,  # (q-1)/88
-    },
-    "dilithium3": {
-        "d": 13,
-        "k": 6,
-        "l": 5,
-        "eta": 4,
-        "tau": 49,
-        "omega": 55,
-        "gamma_1": 524288,  # 2^19
-        "gamma_2": 261888,  # (q-1)/32
-    },
-    "dilithium5": {
-        "d": 13,
-        "k": 8,
-        "l": 7,
-        "eta": 2,
-        "tau": 60,
-        "omega": 75,
-        "gamma_1": 524288,  # 2^19
-        "gamma_2": 261888,  # (q-1)/32
-    },
-}
-
-Dilithium2 = Dilithium(DEFAULT_PARAMETERS["dilithium2"])
-Dilithium3 = Dilithium(DEFAULT_PARAMETERS["dilithium3"])
-Dilithium5 = Dilithium(DEFAULT_PARAMETERS["dilithium5"])
+        return c_tilde == self._h(mu + w_prime_bytes, 32)
