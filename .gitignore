@@ -1,0 +1,8 @@
+# 忽略 Python 的缓存文件
+__pycache__/
+dilipy/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+
